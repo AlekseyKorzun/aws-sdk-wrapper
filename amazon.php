@@ -1,48 +1,49 @@
 <?php
-namespace classes;
+namespace Library;
 
-use \library\Configuration;
+use \Aws\Common\Aws;
+use \Aws\Common\Enum\Region;
+use \Guzzle\Service\Builder\ServiceBuilder;
 
 /**
  * Wrapper for Amazon Web Services library
  *
  * @author Aleksey Korzun <al.ko@webfoundation.net>
  */
-class Amazon {
+class Amazon
+{
     /**
      * Stores instance of Amazon service builder
      *
-     * @var \Guzzle\Service\Builder\ServiceBuilder
+     * @var ServiceBuilder
      */
     protected static $instance;
 
     /**
-     * Class constructor, if no credentials are passed we will attempt to load
-     * data from our configuration file.
+     * Class constructor
      *
-     * @param string $key optional key
-     * @param string $secret optional secret hash
+     * @param string $key access key
+     * @param string $secret secret key
+     * @param string $region optional service region
      */
-    public function __construct($key = null, $secret = null) {
+    public function __construct($key, $secret, $region = null)
+    {
         // Amazon Phar library is required at this point
         require('amazon/library.phar');
 
-        // If no key was passed, attempt to load data from our configuration file
-        if (is_null($key)) {
-            $configuration = Configuration::get('amazon');
-        } else {
-            $configuration = array(
-                'key' => (string) $key,
-                'secret' => (string) $secret
-            );
+        // Construct configuration array
+        $configuration = array(
+            'key' => (string)$key,
+            'secret' => (string)$secret,
+            'region' => (string)$region
+        );
+
+        // Set region if it's missing
+        if (!isset($region)) {
+            $configuration['region'] = Region::US_EAST_1;
         }
 
-        // Always set region if it's missing
-        if (!isset($configuration['region'])) {
-            $configuration['region'] = \Aws\Common\Enum\Region::US_EAST_1;
-        }
-
-        self::$instance = \Aws\Common\Aws::factory($configuration);
+        self::$instance = Aws::factory($configuration);
     }
 
     /**
@@ -53,7 +54,14 @@ class Amazon {
      *
      * @return mixed
      */
-    public function __call($name, $arguments) {
-        return self::$instance->$name(array_shift($arguments));
+    public function __call($name, $arguments)
+    {
+        return call_user_func_array(
+            array(
+                self::$instance,
+                $name
+            ),
+            $arguments
+        );
     }
 }

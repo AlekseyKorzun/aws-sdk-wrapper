@@ -8,7 +8,8 @@ Here is simple example on how to check e-mail verification status using Amazon's
 ```php
 <?php
 use \Exception;
-use \classes\Amazon;
+use \Library\Amazon;
+use \Aws\Common\Exception\ServiceResponseException;
 
 $amazon = new Amazon();
 $client = $amazon->get('ses');
@@ -21,10 +22,10 @@ try {
 			)
 		)
 	);
-	
+
 	print_r($response->getAll());
-} catch (Exception $e) {
-	print $e->getMessage();
+} catch (ServiceResponseException $exception) {
+	print $exception->getMessage();
 }
 ```
 
